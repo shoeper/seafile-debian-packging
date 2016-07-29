@@ -7,6 +7,8 @@ outputdir=/app/debs
 
 mkdir -p $outputdir
 
+rm -f $outputdir/*.deb
+
 cd $topdir
 
 projects=(
@@ -17,7 +19,7 @@ projects=(
 )
 
 for project in ${projects[*]}; do
-    builddir=${topdir}/build-${project}
+    builddir=/tmp/build-${project}
     mkdir -p $builddir && cd $builddir
     git clone --branch lpad --depth 1 https://github.com/haiwen/${project}.git
     cd $project

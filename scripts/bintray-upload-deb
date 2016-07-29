@@ -181,8 +181,6 @@ def main():
         sys.exit(1)
 
     pkg, version, arch = m.groups()
-    if pkg == 'seafile':
-        pkg = 'seafile-client'
     if opts.dry_run:
         print pkg, version, arch
     else:
