@@ -6,7 +6,14 @@ services:
   - docker
 
 before_install:
-# Only upload to bintray when building a tag
-- if [[ $TRAVIS_TAG != "" ]]; then exit 0; fi
 - docker pull lins05/seafile-debian-builder
-- docker run -it -e BINTRAY_AUTH:$BINTRAY_AUTH --name builder `PWD`:/app lins05/seafile-debian-builder /app/build.sh $TRAVIS_TAG
+- |
+  docker run --rm -it \
+        -e BINTRAY_AUTH:$BINTRAY_AUTH \
+        -e TRAVIS_TAG:$TRAVIS_TAG \
+        -e TRAVIS_BRANCH:$TRAVIS_BRANCH \
+        -e TRAVIS_PULL_REQUEST:$TRAVIS_PULL_REQUEST \
+        -v `pwd`:/app \
+        --name builder \
+        lins05/seafile-debian-builder \
+        /app/build.sh
