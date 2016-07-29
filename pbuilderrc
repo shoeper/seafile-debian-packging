@@ -56,3 +56,36 @@ BUILDRESULT="/var/cache/pbuilder/$NAME/result/"
 APTCACHE="/var/cache/pbuilder/$NAME/aptcache/"
 BUILDPLACE="/var/cache/pbuilder/build"
 HOOKDIR="/var/cache/pbuilder/hook.d/"
+
+# See http://www.tolaris.com/2009/04/09/adding-a-local-respository-to-pbuilder/
+
+# use previously built packages as local respository
+BINDMOUNTS="$BUILDRESULT"
+OTHERMIRROR="deb [trusted=yes] file:$BUILDRESULT ./"
+
+# create local repository if it doesn't already exist,
+# such as during initial 'pbuilder create'
+if [ ! -d $BUILDRESULT ] ; then
+    mkdir -p $BUILDRESULT
+fi
+if [ ! -e $BUILDRESULT/Packages ] ; then
+    touch $BUILDRESULT/Packages
+fi
+if [ ! -e $BUILDRESULT/Release ] ; then
+    cat << EOF > $BUILDRESULT/Release
+Archive: $DIST
+Component: main
+Origin: pbuilder
+Label: pbuilder
+Architecture: $ARCH
+EOF
+
+fi
+
+hookscript=D05apt-ftparchive
+
+if [[ ! -e $HOOKDIR/$hookscript ]]; then
+    mkdir -p $HOOKDIR
+    cp -a /root/$hookscript $HOOKDIR/
+    chmod +x $HOOKDIR/$hookscript
+fi

@@ -17,5 +17,7 @@ RUN curl -o /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py && \
     pip install --no-cache-dir requests[security]==2.10.0 && \
     rm -rf ~/.cache/pip
 
-COPY pbuilderrc /root/.pbuilderrc
 RUN apt-get install -y pbuilder qemu-user-static debian-archive-keyring
+
+COPY pbuilderrc /root/.pbuilderrc
+ADD D05apt-ftparchive /root/

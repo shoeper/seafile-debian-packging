@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x -e
+set -e
 
 docker pull lins05/seafile-debian-builder
 
