@@ -1,0 +1,194 @@
+#!/usr/bin/env python
+
+"""
+Upload a debian package to bintray seafile-org/deb apt repo, standalone verison.
+Usage:
+
+./bintray-upload-deb /home/ubuntu/seafile_5.1.3_amd64.deb
+"""
+
+import sys
+import os
+import re
+import argparse
+import json
+import logging
+import requests
+
+from functools import wraps
+from urlparse import urljoin
+
+logger = logging.getLogger(__file__)
+
+def jsonify(doc):
+    return json.dumps(doc, indent=4, sort_keys=True)
+
+def jsonresult(func):
+    @wraps(func)
+    def wrapper(self, *a, **kw):
+        r = func(self, *a, **kw)
+        try:
+            output = r.json()
+        except Exception:
+            logger.exception('failed to read json response')
+            output = {'content': r.content}
+
+        output['status_code'] = r.status_code
+        if logger is not None:
+            logger.debug('%s %s\n%s %s\n%s',
+                         r.request.method, r.url, a, kw, jsonify(output))
+        return output
+    return wrapper
+
+class RestClient(requests.Session):
+
+    def __init__(self, base_url):
+        super(RestClient, self).__init__()
+        self.base_url = base_url
+        self.headers['Content-Type'] = 'application/json'
+        self.headers['Accept'] = 'application/json'
+
+    def request(self, method, url, *a, **kw):
+        url = urljoin(self.base_url, url.lstrip('/'))
+        if 'data' in kw and isinstance(kw['data'], dict):
+            kw['data'] = json.dumps(kw['data'])
+        return super(RestClient, self).request(method, url, *a, **kw)
+
+class BintrayClient(RestClient):
+    def __init__(self, repo, auth=None):
+        super(BintrayClient, self).__init__('https://bintray.com/api/v1/')
+        self.repo = repo
+        self.auth = auth
+
+    @jsonresult
+    def request(self, method, url, *a, **kw):
+        if self.auth:
+            # otherwise requrests library would try to pick auth from ~/.netrc
+            kw.setdefault('auth', self.auth)
+        return super(BintrayClient, self).request(method, url, *a, **kw)
+
+    def create_version(self, package, version):
+        # POST /packages/:subject/:repo/:package/versions
+        logger.info('creating version %s for package %s', version, package)
+        info = {
+            'name': version,
+            'desc': '%s %s' % (package, version)
+        }
+        r = self.post('/packages/{repo}/{package}/versions'
+                  .format(repo=self.repo, package=package), data=info)
+
+        if r['status_code'] == 409:
+            logger.warning('version %s for package %s already exists', version, package)
+        elif r['status_code'] == 201:
+            logger.info('created version %s for package %s', version, package)
+        else:
+            raise Exception('error when creating version %s %s %s' % (package, version, r))
+
+    def upload_file(self, package, version, arch, fn):
+        # PUT /content/:subject/:repo/:package/:version/:file_path[?publish=0/1][?override=0/1][?explode=0/1]
+        logger.info('uploading file %s (arch %s) to %s:%s', os.path.basename(fn), arch, package, version)
+
+        file_path = os.path.basename(fn)
+        folder = _get_folder(package)
+
+        url = '/content/{repo}/{package}/{version}/pool/main/{category}/{folder}/{file_path}'.format(
+            repo=self.repo, category=package[0], package=package,
+            version=version, file_path=file_path, folder=folder)
+        dist = ','.join([
+            'wheezy',
+            'jessie',
+            'precise',
+            'quantal',
+            'raring',
+            'saucy',
+            'trusty',
+            'utopic',
+            'wily',
+            'xenial',
+            'xenial'
+            'yakkety',
+        ])
+        url += ';deb_distribution={dist};deb_component=main;deb_architecture={arch};publish=1;override=1'.format(arch=arch, dist=dist)
+
+        logger.debug('uploading to %s', url)
+        with open(fn, 'r') as fp:
+            r = self.put(url, data=fp)
+            if r['status_code'] == 201:
+                logger.info('file uploaded successfully for %s:%s', package, version)
+            else:
+                raise Exception('error when uploading files for %s %s: %s' % (package, version, r))
+
+    def create_package(self, package):
+        # POST /packages/:subject/:repo
+        logger.info('creating deb package %s', package)
+        data = {
+            'name': package,
+            'desc': package,
+            'labels': ['seafile',],
+            'licenses': ['Apache-2.0'],
+            'vcs_url': 'https://github.com/haiwen/seafile',
+            'website_url': 'https://www.seafile.com',
+        }
+        r = self.post('/packages/{repo}'.format(repo=self.repo), data=data)
+        if r['status_code'] == 201:
+            logger.info('created package %s', package)
+        elif r['status_code'] == 409:
+            logger.info('package %s already exists', package)
+        else:
+            raise Exception('error when creating package %s in %s: %s' % (package, self.repo, r))
+
+pkg_folder_mapping = {
+    'seafile': 'seafile-client',
+    'seafile-server': 'seafile-server',
+}
+
+def _get_folder(package):
+    return pkg_folder_mapping.get(package, package)
+
+def setup_logging(args):
+    level = logging.DEBUG if args.debug else logging.INFO
+    kw = {
+        'format': '[%(asctime)s][%(module)s]: %(message)s',
+        'datefmt': '%m/%d/%Y %H:%M:%S',
+        'level': level,
+        'stream': sys.stdout
+    }
+
+    logging.basicConfig(**kw)
+    logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--repo', default='seafile-org/deb')
+    ap.add_argument('--debug', action='store_true')
+    ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--auth', help='user:key', default=os.environ.get('BINTRAY_AUTH', ''))
+    ap.add_argument('pkg', help='the package to upload')
+    opts = ap.parse_args()
+    setup_logging(opts)
+
+    auth = tuple(opts.auth.split(':')) if opts.auth else None
+    bintray = BintrayClient(opts.repo, auth=auth)
+
+    if not os.path.exists(opts.pkg):
+        print 'file {} does not exist'.format(opts.pkg)
+        sys.exit(1)
+
+    pattern = re.compile(r'(.*)_(.*)_(.*?).deb')
+    m = pattern.match(os.path.basename(opts.pkg))
+    if not m:
+        print 'invalid package name {}'.format(opts.pkg)
+        sys.exit(1)
+
+    pkg, version, arch = m.groups()
+    if pkg == 'seafile':
+        pkg = 'seafile-client'
+    if opts.dry_run:
+        print pkg, version, arch
+    else:
+        bintray.create_package(pkg)
+        bintray.create_version(pkg, version)
+        bintray.upload_file(pkg, version, arch, opts.pkg)
+
+if __name__ == '__main__':
+    main()

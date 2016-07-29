@@ -1,0 +1,12 @@
+sudo: required
+
+language: python
+
+services:
+  - docker
+
+before_install:
+# Only upload to bintray when building a tag
+- if [[ $TRAVIS_TAG != "" ]]; then exit 0; fi
+- docker pull lins05/seafile-debian-builder
+- docker run -it -e BINTRAY_AUTH:$BINTRAY_AUTH --name builder `PWD`:/app lins05/seafile-debian-builder /app/build.sh $TRAVIS_TAG
