@@ -1,0 +1,10 @@
+*~
+~#
+*.bak
+*.o
+*.exe
+*.log
+*.gz
+*.pyc
+DS_Store
+
