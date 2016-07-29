@@ -4,6 +4,7 @@ set -x -e
 
 topdir=/app
 outputdir=/app/debs
+branch=lpad
 
 mkdir -p $outputdir
 
@@ -21,7 +22,7 @@ projects=(
 for project in ${projects[*]}; do
     builddir=/tmp/build-${project}
     mkdir -p $builddir && cd $builddir
-    git clone --branch lpad --depth 1 https://github.com/haiwen/${project}.git
+    git clone --branch ${branch} --depth 1 https://github.com/haiwen/${project}.git
     cd $project
     dpkg-buildpackage -b
 
@@ -29,6 +30,20 @@ for project in ${projects[*]}; do
     # Install the debs because it would be required by latter proejcts (e.g. ccnet requires libsearpc pkgs.)
     dpkg -i ./*.deb
     cp ./*.deb $outputdir
+done
+
+# Build 32 bit package with pbuilder
+for project in ${projects[*]}; do
+    builddir=/tmp/build32-${project}
+    mkdir -p $builddir && cd $builddir
+    git clone --branch ${branch} --depth 1 https://github.com/haiwen/${project}.git
+    cd $project
+
+    echo '3.0 (native)' > debian/source/format
+    OS=debian DIST=wheezy ARCH=i386 pdebuild
+
+    cd /var/cache/pbuilder/debian-wheezy-i386/result/
+    cp *.deb $outputdir
 done
 
 if [[ $TRAVIS_TAG == "" ]]; then
