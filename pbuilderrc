@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# See https://jodal.no/2015/03/08/building-arm-debs-with-pbuilder/
+
 set -e
 
 if [ "$OS" == "debian" ]; then
@@ -61,7 +63,7 @@ HOOKDIR="/var/cache/pbuilder/hook.d/"
 
 # use previously built packages as local respository
 BINDMOUNTS="$BUILDRESULT"
-OTHERMIRROR="deb [trusted=yes] file:$BUILDRESULT ./"
+OTHERMIRROR="$OTHERMIRROR | deb [trusted=yes] file:$BUILDRESULT ./"
 
 # create local repository if it doesn't already exist,
 # such as during initial 'pbuilder create'

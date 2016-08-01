@@ -2,13 +2,15 @@
 # 2009-04-09 tyler - use previously built packages as an apt source
 # http://blog.edseek.com/~jasonb/articles/pbuilder_backports/pbuilderbuild.html#pbuilderhook
 
+set -e -x
+
 echo Calling $0
 
-BUILDRESULT=/var/cache/pbuilder/debian-wheezy-i386/result/
+BUILDRESULT=/var/cache/pbuilder/debian-wheezy-i386/result
+
+which apt-ftparchive || apt-get install -y apt-utils
 
 # create apt archive of previously built packages
 ( cd $BUILDRESULT ; apt-ftparchive packages . > $BUILDRESULT/Packages )
-
-# see ~/.pbuilderrc for creation of $BUILDRESULT/Release
 
 apt-get update

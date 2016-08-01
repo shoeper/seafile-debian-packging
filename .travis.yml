@@ -1,9 +1,16 @@
 sudo: required
-
 language: python
+
+env:
+  global:
+    - secure: "rXjaFudAwHVyfQyneXcV6NQq1i9bMTLQ7ey1AJY08AN97wGENdQ88SoeiFu3vcHKIwGad4vs7fTOnJAem/DsL1YeVtTopbcElhN6hfCQUusdt4zdSy8tCVuaFMXrMxa3pxPXo4lpSJBFTUEm7p52lvt/bSXNBFB7Z7zF0uZV87oG2IVrAc+rut1bseleE55AUVbnH4gCnUNMf1PjT8DePsG7bBFr38U/WoXfuDCO45ysuAm7X9UiZ457JyPzU/jsCSuU4sepmIVy33sK7OqsGWuwUdC7r9xingu43R8WRFqNSPSjIeOzZ0voXoMMCOjZuXf7/MjmvEhwYleZZdS3/xgxScIKIGNkZiIEKir7gzkCMuYS2RnC6ckGEiyLZ9q3Dpj06SB+39XgL72ExW0Pl7/Q6VXoILmKNiNvnBxMtWy0V1UmK4ugFODTRB177WKuUZVCsJYtGNW6WlWcRCBCPqY6cfn3ivRV/zBPP83yFxZFVryVDQqABfiIpAilwXLxROip7gio1oCaqjy0IzEA19QKi5KVCS3Mm3GnvVNXHGnKoIE+RHTSkon+owkwQ0DJeLAAaxt8eNKyQ7PqCMzBJTVSWFII9M1W4VbVM2D9k+bNmdbb5XPsuwnA4EUTGPG6AWRk33djv4z1ni6PkImy4bola5i8Z3qxsnjJkv/dW6M="
 
 services:
   - docker
+
+install:
+  # Must put something here, or travis would ask us for requirments.txt
+  - echo "Nothing to install"
 
 script:
   - scripts/travis.sh
