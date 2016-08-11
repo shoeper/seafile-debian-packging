@@ -105,7 +105,6 @@ class BintrayClient(RestClient):
             'utopic',
             'wily',
             'xenial',
-            'xenial'
             'yakkety',
         ])
         url += ';deb_distribution={dist};deb_component=main;deb_architecture={arch};publish=1;override=1'.format(arch=arch, dist=dist)
