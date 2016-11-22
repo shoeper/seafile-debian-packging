@@ -5,3 +5,11 @@ For Ubuntu, please go to [Seafile Clients PPA](https://code.launchpad.net/~seafi
 # Last Version
 
 * Seafile Client 6.0.0 Released on 2016/10/15.
+
+# Debug symbol packages
+
+To install the debug symbols, run:
+
+```sh
+apt-get install libsearpc-dbg ccnet-dbg libccnet-dbg seafile-daemon-dbg libseafile-dbg seafile-gui-dbg
+```

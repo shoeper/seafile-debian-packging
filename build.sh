@@ -63,5 +63,5 @@ if [[ $TRAVIS_TAG == "" && $TRAVIS_BRANCH != "lpad" ]]; then
 fi
 
 for pkg in $outputdir/*.deb; do
-    /app/scripts/bintray-upload-deb $pkg
+    /app/scripts/bintray-upload-deb --debug $pkg
 done
