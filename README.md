@@ -4,7 +4,7 @@ For Ubuntu, please go to [Seafile Clients PPA](https://code.launchpad.net/~seafi
 
 # Last Version
 
-* Seafile Client 6.0.0 Released on 2016/10/15.
+* Seafile Client 6.0.1 Released on 2016/12.
 
 # Debug symbol packages
 
