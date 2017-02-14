@@ -33,7 +33,9 @@ def jsonresult(func):
             logger.exception('failed to read json response')
             output = {'content': r.content}
 
-        output['status_code'] = r.status_code
+        if isinstance(output, dict):
+            output['status_code'] = r.status_code
+
         if logger is not None:
             logger.debug('%s %s\n%s %s\n%s',
                          r.request.method, r.url, a, kw, jsonify(output))
@@ -204,7 +206,7 @@ def main():
         bintray.create_package(pkg)
         bintray.create_version(pkg, version)
         if bintray.file_exists(pkg, version):
-            print 'file {} already exists on bintray, skipping it'
+            print 'file {} already exists on bintray, skipping it'.format(os.path.basename(opts.pkg))
         else:
             bintray.upload_file(pkg, version, arch, opts.pkg)
 
