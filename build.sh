@@ -94,7 +94,7 @@ uploaded_debs=""
 {
     for pkg in $outputdir/*.deb; do
         /app/scripts/bintray-upload-deb --debug $pkg
-        uploaded_debs="$uploaded_debs $pkg"
+        uploaded_debs="$(basename $uploaded_debs) $pkg"
     done
     msg="Debs upload successfully to bintray: $uploaded_debs"
 } || {

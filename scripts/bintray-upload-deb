@@ -138,12 +138,9 @@ class BintrayClient(RestClient):
         else:
             raise Exception('error when creating package %s in %s: %s' % (package, self.repo, r))
 
-    def file_exists(self, pkg, version):
+    def file_exists(self, pkg, debfile):
         files = self.get_pkg_files(pkg)
-        for name in files:
-            if pkg in name and version in name:
-                return True
-        return False
+        return debfile in files
 
     def get_pkg_files(self, pkg):
         # https://bintray.com/api/v1/packages/scrapinghub/percona/percona-xtradb-cluster-client-5.6/files
@@ -194,7 +191,8 @@ def main():
         sys.exit(1)
 
     pattern = re.compile(r'(.*)_(.*)_(.*?).deb')
-    m = pattern.match(os.path.basename(opts.pkg))
+    debfile = os.path.basename(opts.pkg)
+    m = pattern.match(debfile)
     if not m:
         print 'invalid package name {}'.format(opts.pkg)
         sys.exit(1)
@@ -205,8 +203,8 @@ def main():
     else:
         bintray.create_package(pkg)
         bintray.create_version(pkg, version)
-        if bintray.file_exists(pkg, version):
-            print 'file {} already exists on bintray, skipping it'.format(os.path.basename(opts.pkg))
+        if bintray.file_exists(pkg, debfile):
+            print 'file {} already exists on bintray, skipping it'.format(debfile)
         else:
             bintray.upload_file(pkg, version, arch, opts.pkg)
 
