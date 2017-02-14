@@ -15,6 +15,7 @@ docker rm -f $container || true
 
 docker run -it $docker_envs \
        -e "BINTRAY_AUTH=$BINTRAY_AUTH" \
+       -e "SLACK_NOTIFY_URL=$SLACK_NOTIFY_URL" \
        -v "$(pwd):/app" \
        --privileged \
        --name $container \
