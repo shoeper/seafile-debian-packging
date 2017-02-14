@@ -90,15 +90,15 @@ msg=
 channel=seafile-client
 color="good"
 uploaded_debs=""
-(
+{
     for pkg in $outputdir/*.deb; do
         /app/scripts/bintray-upload-deb --debug $pkg
         uploaded_debs="$uploaded_debs $pkg"
     done
     msg="Debs upload successfully to bintray: $uploaded_debs"
-) || {
+} || {
     color="bad"
     msg="Failed to upload debs to bintray"
 }
 
-/app/scripts/slack_notify.py --botname deb-travis-builder --color "$color" seafile "$channel" "$msg" --at lins05,jiaqiangxu
+/app/scripts/slack_notify.py --botname deb-travis-builder --color "$color" "$channel" "$msg" --at lins05,jiaqiangxu
