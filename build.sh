@@ -86,6 +86,7 @@ if [[ $TRAVIS_TAG == "" && $TRAVIS_BRANCH != "lpad" ]]; then
     exit 0
 fi
 
+at_users=lins05,jiaqiangxu
 msg=
 channel=seafile-client
 color="good"
@@ -101,4 +102,4 @@ uploaded_debs=""
     msg="Failed to upload debs to bintray"
 }
 
-/app/scripts/slack_notify.py --botname deb-travis-builder --color "$color" "$channel" "$msg" --at lins05,jiaqiangxu
+/app/scripts/slack_notify.py --botname deb-travis-builder --color "$color" "$channel" "$msg" --at "$at_users"
