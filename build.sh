@@ -20,6 +20,30 @@ projects=(
     seafile-client
 )
 
+declare -a __atexit_cmds
+
+# Helper for eval'ing commands.
+__atexit() {
+    for cmd in "${__atexit_cmds[@]}"; do
+        eval ${cmd}
+    done
+}
+
+# Usage: atexit command arg1 arg2 arg3
+atexit() {
+    # Determine the current number of commands.
+    local length=${#__atexit_cmds[*]}
+
+    # Add this command to the end.
+    __atexit_cmds[${length}]="${*}"
+
+    # Set the trap handler if this was the first command added.
+    if [[ ${length} -eq 0 ]]; then
+        trap __atexit EXIT
+    fi
+}
+
+
 # Build 32 bit package with pbuilder
 BUILDRESULT=/var/cache/pbuilder/debian-wheezy-i386/result/
 for project in ${projects[*]}; do
@@ -62,6 +86,19 @@ if [[ $TRAVIS_TAG == "" && $TRAVIS_BRANCH != "lpad" ]]; then
     exit 0
 fi
 
-for pkg in $outputdir/*.deb; do
-    /app/scripts/bintray-upload-deb --debug $pkg
-done
+msg=
+channel=seafile-client
+color="good"
+uploaded_debs=""
+(
+    for pkg in $outputdir/*.deb; do
+        /app/scripts/bintray-upload-deb --debug $pkg
+        uploaded_debs="$uploaded_debs $pkg"
+    done
+    msg="Debs upload successfully to bintray: $uploaded_debs"
+) || {
+    color="bad"
+    msg="Failed to upload debs to bintray"
+}
+
+/app/scripts/slack_notify.py --botname deb-travis-builder --color "$color" seafile "$channel" "$msg" --at lins05,jiaqiangxu

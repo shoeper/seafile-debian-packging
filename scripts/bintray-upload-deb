@@ -136,6 +136,24 @@ class BintrayClient(RestClient):
         else:
             raise Exception('error when creating package %s in %s: %s' % (package, self.repo, r))
 
+    def file_exists(self, pkg, version):
+        files = self.get_pkg_files(pkg)
+        for name in files:
+            if pkg in name and version in name:
+                return True
+        return False
+
+    def get_pkg_files(self, pkg):
+        # https://bintray.com/api/v1/packages/scrapinghub/percona/percona-xtradb-cluster-client-5.6/files
+        pkg = '{}/{}'.format(self.repo, pkg)
+        v = self.get('/packages/{}/files'.format(pkg))
+        if isinstance(v, dict) and v['status_code'] == 404:
+            logger.debug('failed to get pkg files for package %s: %s', pkg,
+                         v.get('message', ''))
+            return {}
+        return {item['name']: item
+                for item in v if not item['name'].endswith('.asc')}
+
 pkg_folder_mapping = {
     'seafile': 'seafile-client',
     'seafile-server': 'seafile-server',
@@ -185,7 +203,10 @@ def main():
     else:
         bintray.create_package(pkg)
         bintray.create_version(pkg, version)
-        bintray.upload_file(pkg, version, arch, opts.pkg)
+        if bintray.file_exists(pkg, version):
+            print 'file {} already exists on bintray, skipping it'
+        else:
+            bintray.upload_file(pkg, version, arch, opts.pkg)
 
 if __name__ == '__main__':
     main()
