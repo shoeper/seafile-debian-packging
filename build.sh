@@ -88,11 +88,14 @@ fi
 
 at_users=lins05,jiaqiangxu
 msg=
-channel=seafile-client
+channel=seafile-release
 color="good"
 uploaded_debs=""
 {
     for pkg in $outputdir/*.deb; do
+        if [[ $pkg == *searpc* ]];then
+            continue
+        fi
         /app/scripts/bintray-upload-deb --debug $pkg
         uploaded_debs="$uploaded_debs $(basename $pkg)"
     done
