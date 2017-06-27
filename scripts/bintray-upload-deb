@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Upload a debian package to bintray seafile-org/deb apt repo, standalone verison.
+Upload a debian package to bintray seafile-org/deb-unstable apt repo, standalone verison.
 Usage:
 
 ./bintray-upload-deb /home/ubuntu/seafile_5.1.3_amd64.deb
@@ -86,29 +86,16 @@ class BintrayClient(RestClient):
         else:
             raise Exception('error when creating version %s %s %s' % (package, version, r))
 
-    def upload_file(self, package, version, arch, fn):
+    def upload_file(self, package, version, arch, fn, dist):
         # PUT /content/:subject/:repo/:package/:version/:file_path[?publish=0/1][?override=0/1][?explode=0/1]
         logger.info('uploading file %s (arch %s) to %s:%s', os.path.basename(fn), arch, package, version)
 
         file_path = os.path.basename(fn)
         folder = _get_folder(package)
 
-        url = '/content/{repo}/{package}/{version}/pool/main/{category}/{folder}/{file_path}'.format(
+        url = '/content/{repo}/{package}/{version}/{dist}/pool/main/{category}/{folder}/{file_path}'.format(
             repo=self.repo, category=package[0], package=package,
-            version=version, file_path=file_path, folder=folder)
-        dist = ','.join([
-            'wheezy',
-            'jessie',
-            'precise',
-            'quantal',
-            'raring',
-            'saucy',
-            'trusty',
-            'utopic',
-            'wily',
-            'xenial',
-            'yakkety',
-        ])
+            version=version, file_path=file_path, folder=folder, dist=dist)
         url += ';deb_distribution={dist};deb_component=main;deb_architecture={arch};publish=1;override=1'.format(arch=arch, dist=dist)
 
         logger.debug('uploading to %s', url)
@@ -138,11 +125,11 @@ class BintrayClient(RestClient):
         else:
             raise Exception('error when creating package %s in %s: %s' % (package, self.repo, r))
 
-    def file_exists(self, pkg, debfile):
-        files = self.get_pkg_files(pkg)
+    def file_exists(self, dist, pkg, debfile):
+        files = self.get_pkg_files(dist, pkg)
         return debfile in files
 
-    def get_pkg_files(self, pkg):
+    def get_pkg_files(self, dist, pkg):
         # https://bintray.com/api/v1/packages/scrapinghub/percona/percona-xtradb-cluster-client-5.6/files
         pkg = '{}/{}'.format(self.repo, pkg)
         v = self.get('/packages/{}/files'.format(pkg))
@@ -150,8 +137,12 @@ class BintrayClient(RestClient):
             logger.debug('failed to get pkg files for package %s: %s', pkg,
                          v.get('message', ''))
             return {}
-        return {item['name']: item
-                for item in v if not item['name'].endswith('.asc')}
+
+        # We store the files in different folders for different distros
+        def matchfn(item):
+            return '{}/'.format(dist) in item['path'] \
+                and not item['name'].endswith('.asc')
+        return {item['name']: item for item in v if matchfn(item)}
 
 pkg_folder_mapping = {
     'seafile': 'seafile-client',
@@ -172,12 +163,32 @@ def setup_logging(args):
 
     logging.basicConfig(**kw)
     logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
+    logging.getLogger('connectionpool').setLevel(logging.WARNING)
+
+SUPPORTED_DISTS = [
+    'wheezy',
+    'jessie',
+    'precise',
+    'quantal',
+    'raring',
+    'saucy',
+    'trusty',
+    'utopic',
+    'wily',
+    'xenial',
+    'yakkety',
+]
+def check_dist(dist):
+    dists = dist.split(',')
+    for d in dists:
+        assert d in SUPPORTED_DISTS
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--repo', default='seafile-org/deb')
+    ap.add_argument('--repo', default='seafile-org/deb-unstable')
     ap.add_argument('--debug', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--dist', required=True)
     ap.add_argument('--auth', help='user:key', default=os.environ.get('BINTRAY_AUTH', ''))
     ap.add_argument('pkg', help='the package to upload')
     opts = ap.parse_args()
@@ -203,10 +214,11 @@ def main():
     else:
         bintray.create_package(pkg)
         bintray.create_version(pkg, version)
-        if bintray.file_exists(pkg, debfile):
+        if bintray.file_exists(opts.dist, pkg, debfile):
             print 'file {} already exists on bintray, skipping it'.format(debfile)
         else:
-            bintray.upload_file(pkg, version, arch, opts.pkg)
+            bintray.upload_file(pkg, version, arch, opts.pkg, opts.dist)
+
 
 if __name__ == '__main__':
     main()

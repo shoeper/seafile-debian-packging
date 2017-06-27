@@ -20,6 +20,6 @@ docker run -it $docker_envs \
        --privileged \
        --name $container \
        $image \
-       /app/build-debs.sh
+       /app/scripts/build-debs.sh
 
-       # bash -c '/app/build.sh || sleep 30000'
+       # bash -c '/app/scripts/build-debs.sh || sleep 30000'
