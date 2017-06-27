@@ -2,8 +2,8 @@
 
 set -e
 
-image=lins05/seafile-debian-builder:latest
-container=builder
+image=lins05/seadrive-builder:latest
+container=seafile-client-deb-builder
 
 mapfile -t travis_env < <(env |grep TRAVIS)
 docker_envs=""
@@ -20,6 +20,6 @@ docker run -it $docker_envs \
        --privileged \
        --name $container \
        $image \
-       /app/build.sh
+       /app/build-debs.sh
 
        # bash -c '/app/build.sh || sleep 30000'
