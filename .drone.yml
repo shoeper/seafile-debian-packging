@@ -1,0 +1,19 @@
+pipeline:
+  build:
+    image: lins05/seadrive-builder:latest
+    pull: true
+    privileged: true
+    environment:
+      - BINTRAY_AUTH=${BINTRAY_AUTH}
+      - SLACK_NOTIFY_URL=${SLACK_NOTIFY_URL}
+    commands:
+      - ./scripts/drone-build.sh
+
+  slack:
+      image: plugins/slack
+      webhook: ${SLACK_NOTIFY_URL}
+      channel: seafile-client
+      username: drone
+      when:
+        branch: [lpad, lpad-dev]
+        status: [ failure ]
