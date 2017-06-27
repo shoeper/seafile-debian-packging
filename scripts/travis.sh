@@ -11,7 +11,9 @@ for k in ${travis_env[*]}; do
     docker_envs="$docker_envs -e $k"
 done
 
-docker rm -f $container || true
+if docker inspect $container; then
+    docker rm -f $container
+fi
 
 docker run -it $docker_envs \
        -e "BINTRAY_AUTH=$BINTRAY_AUTH" \
