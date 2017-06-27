@@ -94,7 +94,7 @@ do_upload() {
     local uploaded_debs=""
     local dist_outputdir
 
-    if [[ $TRAVIS_BRANCH != "lpad" ]]; then
+    if [[ $DRONE_BRANCH != "lpad" ]]; then
         channel=shuai-test
     fi
     dist_outputdir=$(get_dist_output_dir ${dist} ${arch})
@@ -117,14 +117,14 @@ do_upload() {
 upload_if_necessary() {
     local dist=${1:?"Please specify the dist"}
 
-    if [[ $TRAVIS_PULL_REQUEST != "" ]]; then
+    if [[ $DRONE_PULL_REQUEST != "" ]]; then
         echo "Not uploading for pull requests."
         return 0
     fi
 
-    if [[ $TRAVIS_BRANCH == "lpad-dev" ]]; then
+    if [[ $DRONE_BRANCH == "lpad-dev" ]]; then
         repo=seafile-org/deb-unstable
-    elif [[ $TRAVIS_BRANCH == "lpad" ]]; then
+    elif [[ $DRONE_BRANCH == "lpad" ]]; then
         repo=seafile-org/deb
     else
         echo "Skipping uploading. To force a upload, push to the \"lpad\" branch."
