@@ -7,4 +7,5 @@
 *.gz
 *.pyc
 DS_Store
+debs/
 
