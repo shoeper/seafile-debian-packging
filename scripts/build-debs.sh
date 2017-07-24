@@ -96,7 +96,7 @@ do_upload() {
     local color="good"
     local uploaded_debs=""
     local dist_outputdir
-    local upload_interval=5
+    local upload_interval=30
 
     if [[ $DRONE_BRANCH != "lpad" ]]; then
         channel=shuai-test
