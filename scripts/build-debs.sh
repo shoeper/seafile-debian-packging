@@ -96,6 +96,7 @@ do_upload() {
     local color="good"
     local uploaded_debs=""
     local dist_outputdir
+    local upload_interval=5
 
     if [[ $DRONE_BRANCH != "lpad" ]]; then
         channel=shuai-test
@@ -105,6 +106,8 @@ do_upload() {
         for pkg in ${dist_outputdir}/*.deb; do
             ${SCRIPTSDIR}/bintray-upload-deb --repo $repo --dist $dist --debug $pkg
             uploaded_debs="$uploaded_debs $(basename $pkg)"
+            # avoid sending request to bintray too fast
+            sleep $upload_interval
         done
 
         msg="Debs upload for \"$dist\" successfully to bintray repo \"$repo\": $uploaded_debs"
