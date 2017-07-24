@@ -5,6 +5,8 @@ pipeline:
     privileged: true
     environment:
       - BINTRAY_AUTH=${BINTRAY_AUTH}
+      - BINTRAY_STABLE_REPO=${BINTRAY_STABLE_REPO}
+      - BINTRAY_UNSTABLE_REPO=${BINTRAY_UNSTABLE_REPO}
       - SLACK_NOTIFY_URL=${SLACK_NOTIFY_URL}
     commands:
       - ./scripts/drone-build.sh

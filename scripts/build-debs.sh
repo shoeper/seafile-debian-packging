@@ -1,7 +1,10 @@
 #!/bin/bash
 
-set -e -x
 set -o pipefail
+set -e -x
+
+: ${BINTRAY_UNSTABLE_REPO:?"The env BINTRAY_UNSTABLE_REPO not set"}
+: ${BINTRAY_STABLE_REPO:?"The env BINTRAY_STABLE_REPO not set"}
 
 SCRIPT=$(readlink -f "$0")
 TOPDIR=$(dirname "${SCRIPT}")/..
@@ -123,9 +126,9 @@ upload_if_necessary() {
     fi
 
     if [[ $DRONE_BRANCH == "lpad-dev" ]]; then
-        repo=seafile-org/deb-unstable
+        repo=${BINTRAY_UNSTABLE_REPO}
     elif [[ $DRONE_BRANCH == "lpad" ]]; then
-        repo=seafile-org/deb
+        repo=${BINTRAY_STABLE_REPO}
     else
         echo "Skipping uploading. To force a upload, push to the \"lpad\" branch."
         return 0
