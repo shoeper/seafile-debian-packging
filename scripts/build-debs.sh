@@ -78,7 +78,7 @@ build_deb() {
             sed -i -e 's/libssl-dev/libssl1.0-dev/g' debian/control
         fi
 
-        OS=$os DIST=$dist ARCH=$arch pdebuild --debbuildopts "-j6 -nc -uc -us"
+        OS=$os DIST=$dist ARCH=$arch pdebuild --debbuildopts "-j3 -nc -uc -us"
 
         cd $buildresult
         cp ./*.deb $dist_outputdir
