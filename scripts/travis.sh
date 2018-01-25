@@ -17,7 +17,7 @@ fi
 
 docker run -it $docker_envs \
        -e "BINTRAY_AUTH=$BINTRAY_AUTH" \
-       -e "SLACK_NOTIFY_URL=$SLACK_NOTIFY_URL" \
+       -e "SLACK_WEBHOOK=$SLACK_WEBHOOK" \
        -v "$(pwd):/app" \
        --privileged \
        --name $container \

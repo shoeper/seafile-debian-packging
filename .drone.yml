@@ -3,18 +3,14 @@ pipeline:
     image: lins05/seadrive-builder:latest
     pull: true
     privileged: true
-    environment:
-      - BINTRAY_AUTH=${BINTRAY_AUTH}
-      - BINTRAY_STABLE_REPO=${BINTRAY_STABLE_REPO}
-      - BINTRAY_UNSTABLE_REPO=${BINTRAY_UNSTABLE_REPO}
-      - SLACK_NOTIFY_URL=${SLACK_NOTIFY_URL}
+    secrets: [ bintray_auth, bintray_stable_repo, bintray_unstable_repo, slack_webhook ]
     commands:
       - ./scripts/drone-build.sh
 
   slack:
       image: plugins/slack
-      webhook: ${SLACK_NOTIFY_URL}
       channel: seafile-client
+      secrets: [ slack_webhook ]
       username: drone
       when:
         branch: [lpad, lpad-dev]

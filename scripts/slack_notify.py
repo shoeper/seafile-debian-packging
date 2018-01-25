@@ -12,9 +12,9 @@ def send_slack_msg(message, channel=None, at_users='', botname='slackbot', color
 
     color can be "good", "warning", "danger" or any hex color code (#AABBCC)
     """
-    url = os.environ.get('SLACK_NOTIFY_URL', '')
+    url = os.environ.get('SLACK_WEBHOOK', '')
     if not url:
-        raise RuntimeError('SLACK_NOTIFY_URL not set')
+        raise RuntimeError('SLACK_WEBHOOK not set')
     channel = channel or os.environ.get('SLACK_NOTIFY_CHANNEL', '')
     if not channel:
         raise RuntimeError('SLACK_NOTIFY_CHANNEL not set')
