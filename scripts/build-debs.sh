@@ -142,13 +142,13 @@ upload_if_necessary() {
 
 configs=(
     "debian,wheezy,amd64"  # debian 6 wheezy
-    "debian,wheezy,i386"  # debian 6 wheezy
+    # "debian,wheezy,i386"  # debian 6 wheezy
 
     "debian,jessie,amd64"  # debian 7 jessie
-    "debian,jessie,i386"  # debian 7 jessie
+    # "debian,jessie,i386"  # debian 7 jessie
 
     "debian,stretch,amd64"  # debian 8 stretch
-    "debian,stretch,i386"  # debian 8 stretch
+    # "debian,stretch,i386"  # debian 8 stretch
 )
 
 for config in ${configs[*]}; do
