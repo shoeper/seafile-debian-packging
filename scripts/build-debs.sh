@@ -17,7 +17,6 @@ rm -f $OUTPUTDIR/*/*.deb
 
 projects=(
     libsearpc
-    ccnet
     seafile
     seafile-client
 )

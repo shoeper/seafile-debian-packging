@@ -11,5 +11,5 @@ For Ubuntu, please go to [Seafile Clients PPA](https://code.launchpad.net/~seafi
 To install the debug symbols, run:
 
 ```sh
-apt-get install libsearpc-dbg ccnet-dbg libccnet-dbg seafile-daemon-dbg libseafile-dbg seafile-gui-dbg
+apt-get install libsearpc-dbg seafile-daemon-dbg libseafile-dbg seafile-gui-dbg
 ```
