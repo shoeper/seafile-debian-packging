@@ -9,7 +9,7 @@ set -e -x
 SCRIPT=$(readlink -f "$0")
 TOPDIR=$(dirname "${SCRIPT}")/..
 SCRIPTSDIR=$TOPDIR/scripts/
-BRANCH=lpad
+BRANCH=${DRONE_BRANCH:-lpad}
 
 OUTPUTDIR=/app/debs
 mkdir -p $OUTPUTDIR
