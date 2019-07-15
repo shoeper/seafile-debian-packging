@@ -140,9 +140,6 @@ upload_if_necessary() {
 }
 
 configs=(
-    "debian,wheezy,amd64"  # debian 7 wheezy
-    # "debian,wheezy,i386"  # debian 7 wheezy
-
     "debian,jessie,amd64"  # debian 8 jessie
     # "debian,jessie,i386"  # debian 8 jessie
 
