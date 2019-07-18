@@ -145,6 +145,9 @@ configs=(
 
     "debian,stretch,amd64"  # debian 9 stretch
     # "debian,stretch,i386"  # debian 9 stretch
+
+    "debian,buster,amd64"  # debian 10 buster
+    # "debian,buster,i386"  # debian 10 buster
 )
 
 for config in ${configs[*]}; do
