@@ -1,0 +1,207 @@
+#!/usr/bin/env python
+
+"""
+Upload a rpm package to bintray haiwen-org/rpm-unstable yum repo, standalone verison.
+Usage:
+
+./bintray-upload-rpm /home/centos/seafile_7.0.2_x86-64.rpm
+"""
+
+import sys
+import os
+import re
+import argparse
+import json
+import logging
+import requests
+
+from functools import wraps
+from urlparse import urljoin
+
+logger = logging.getLogger(__file__)
+
+def jsonify(doc):
+    return json.dumps(doc, indent=4, sort_keys=True)
+
+def jsonresult(func):
+    @wraps(func)
+    def wrapper(self, *a, **kw):
+        r = func(self, *a, **kw)
+        try:
+            output = r.json()
+        except Exception:
+            logger.exception('failed to read json response')
+            output = {'content': r.content}
+
+        if isinstance(output, dict):
+            output['status_code'] = r.status_code
+
+        if logger is not None:
+            logger.debug('%s %s\n%s %s\n%s',
+                         r.request.method, r.url, a, kw, jsonify(output))
+        return output
+    return wrapper
+
+class RestClient(requests.Session):
+
+    def __init__(self, base_url):
+        super(RestClient, self).__init__()
+        self.base_url = base_url
+        self.headers['Content-Type'] = 'application/json'
+        self.headers['Accept'] = 'application/json'
+
+    def request(self, method, url, *a, **kw):
+        url = urljoin(self.base_url, url.lstrip('/'))
+        if 'data' in kw and isinstance(kw['data'], dict):
+            kw['data'] = json.dumps(kw['data'])
+        return super(RestClient, self).request(method, url, *a, **kw)
+
+class BintrayClient(RestClient):
+    def __init__(self, repo, auth=None):
+        super(BintrayClient, self).__init__('https://bintray.com/api/v1/')
+        self.repo = repo
+        self.auth = auth
+
+    @jsonresult
+    def request(self, method, url, *a, **kw):
+        if self.auth:
+            # otherwise requrests library would try to pick auth from ~/.netrc
+            kw.setdefault('auth', self.auth)
+        return super(BintrayClient, self).request(method, url, *a, **kw)
+
+    def create_version(self, package, version):
+        # POST /packages/:subject/:repo/:package/versions
+        logger.info('creating version %s for package %s', version, package)
+        info = {
+            'name': version,
+            'desc': '%s %s' % (package, version)
+        }
+        r = self.post('/packages/{repo}/{package}/versions'
+                  .format(repo=self.repo, package=package), data=info)
+
+        if r['status_code'] == 409:
+            logger.warning('version %s for package %s already exists', version, package)
+        elif r['status_code'] == 201:
+            logger.info('created version %s for package %s', version, package)
+        else:
+            raise Exception('error when creating version %s %s %s' % (package, version, r))
+
+    def upload_file(self, package, version, arch, fn, dist):
+        # PUT /content/:subject/:repo/:package/:version/:file_path[?publish=0/1][?override=0/1][?explode=0/1]
+        logger.info('uploading file %s (arch %s) to %s:%s', os.path.basename(fn), arch, package, version)
+
+        file_path = os.path.basename(fn)
+        folder = _get_folder(package)
+
+        url = '/content/{repo}/{package}/{version}/{dist}/{file_path}'.format(
+            repo=self.repo, category=package[0], package=package,
+            version=version, file_path=file_path, folder=folder, dist=dist)
+        url += ';publish=1;override=1'
+
+        logger.debug('uploading to %s', url)
+        with open(fn, 'r') as fp:
+            r = self.put(url, data=fp)
+            if r['status_code'] == 201:
+                logger.info('file uploaded successfully for %s:%s', package, version)
+            else:
+                raise Exception('error when uploading files for %s %s: %s' % (package, version, r))
+
+    def create_package(self, package):
+        # POST /packages/:subject/:repo
+        logger.info('creating rpm package %s', package)
+        data = {
+            'name': package,
+            'desc': package,
+            'labels': ['seafile',],
+            'licenses': ['Apache-2.0'],
+            'vcs_url': 'https://github.com/haiwen/seafile',
+            'website_url': 'https://www.seafile.com',
+        }
+        r = self.post('/packages/{repo}'.format(repo=self.repo), data=data)
+        if r['status_code'] == 201:
+            logger.info('created package %s', package)
+        elif r['status_code'] == 409:
+            logger.info('package %s already exists', package)
+        else:
+            raise Exception('error when creating package %s in %s: %s' % (package, self.repo, r))
+
+    def file_exists(self, dist, pkg, debfile):
+        files = self.get_pkg_files(dist, pkg)
+        return debfile in files
+
+    def get_pkg_files(self, dist, pkg):
+        # https://bintray.com/api/v1/packages/scrapinghub/percona/percona-xtradb-cluster-client-5.6/files
+        pkg = '{}/{}'.format(self.repo, pkg)
+        v = self.get('/packages/{}/files'.format(pkg))
+        if isinstance(v, dict) and v['status_code'] == 404:
+            logger.debug('failed to get pkg files for package %s: %s', pkg,
+                         v.get('message', ''))
+            return {}
+
+        # We store the files in different folders for different distros
+        def matchfn(item):
+            return '{}/'.format(dist) in item['path'] \
+                and not item['name'].endswith('.asc')
+        return {item['name']: item for item in v if matchfn(item)}
+
+pkg_folder_mapping = {
+    'seafile': 'seafile-client',
+    'seafile-server': 'seafile-server',
+}
+
+def _get_folder(package):
+    return pkg_folder_mapping.get(package, package)
+
+def setup_logging(args):
+    level = logging.DEBUG if args.debug else logging.INFO
+    kw = {
+        'format': '[%(asctime)s][%(module)s]: %(message)s',
+        'datefmt': '%m/%d/%Y %H:%M:%S',
+        'level': level,
+        'stream': sys.stdout
+    }
+
+    logging.basicConfig(**kw)
+    logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
+    logging.getLogger('connectionpool').setLevel(logging.WARNING)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--repo', default='haiwen-org/rpm-unstable')
+    ap.add_argument('--debug', action='store_true')
+    ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--dist', default='centos7')
+    ap.add_argument('--auth', help='user:key', default=os.environ.get('BINTRAY_AUTH', ''))
+    ap.add_argument('pkg', help='the package to upload')
+    opts = ap.parse_args()
+    setup_logging(opts)
+
+    auth = tuple(opts.auth.split(':')) if opts.auth else None
+    logger.info('Using repo {}'.format(opts.repo))
+    bintray = BintrayClient(opts.repo, auth=auth)
+
+    if not os.path.exists(opts.pkg):
+        print 'file {} does not exist'.format(opts.pkg)
+        sys.exit(1)
+
+    pattern = re.compile(r'(.*)_(.*)_(x86_64|i386).rpm')
+    debfile = os.path.basename(opts.pkg)
+    m = pattern.match(debfile)
+    if not m:
+        print 'invalid package name {}'.format(opts.pkg)
+        sys.exit(1)
+
+    pkg, version, arch = m.groups()
+    if opts.dry_run:
+        print pkg, version, arch
+    else:
+        bintray.create_package(pkg)
+        bintray.create_version(pkg, version)
+        if bintray.file_exists(opts.dist, pkg, debfile):
+            print 'file {} already exists on bintray, skipping it'.format(debfile)
+        else:
+            bintray.upload_file(pkg, version, arch, opts.pkg, opts.dist)
+
+
+if __name__ == '__main__':
+    main()

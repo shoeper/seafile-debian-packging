@@ -6,6 +6,15 @@ pipeline:
     secrets: [ bintray_auth, bintray_stable_repo, bintray_unstable_repo, slack_webhook ]
     commands:
       - ./scripts/drone-build.sh
+  rpm-centos7:
+    image: cxy007/seafile-rpm:centos7
+    pull: true
+    privileged: true
+    secrets: [ bintray_auth, slack_webhook ]
+    when:
+      branch: [rpm-release, rpm-release-dev]
+    commands:
+      - ./scripts/build-rpm.sh centos7
 
   slack:
       image: plugins/slack
