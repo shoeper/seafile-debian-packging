@@ -14,7 +14,7 @@ pipeline:
     when:
       branch: [rpm-release, rpm-release-dev]
     commands:
-      - ./scripts/build-rpm.sh centos7
+      - ./scripts/build-rpm.sh centos7 2
 
   slack:
       image: plugins/slack
