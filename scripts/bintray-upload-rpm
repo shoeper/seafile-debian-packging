@@ -197,10 +197,7 @@ def main():
     else:
         bintray.create_package(pkg)
         bintray.create_version(pkg, version)
-        if bintray.file_exists(opts.dist, pkg, debfile):
-            print 'file {} already exists on bintray, skipping it'.format(debfile)
-        else:
-            bintray.upload_file(pkg, version, arch, opts.pkg, opts.dist)
+        bintray.upload_file(pkg, version, arch, opts.pkg, opts.dist)
 
 
 if __name__ == '__main__':

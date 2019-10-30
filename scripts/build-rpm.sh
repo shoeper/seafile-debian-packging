@@ -65,7 +65,6 @@ get_project_git_uri() {
 
 build_rpm() {
     local dist=${1:?"Please specify the dist"}
-    local release_version=${2:?"Please specify the release version"}
     local branch_args
     local seafile_version
     local searpc_version
@@ -103,9 +102,9 @@ build_rpm() {
         fi
     done
 
-    pack_rpm_searpc ${searpc_version?:"Failed to parse seafile version"} $dist $release_version
-    pack_rpm_seafile ${seafile_version?:"Failed to parse seafile version"} $dist $release_version
-    pack_rpm_seafile_client ${seafile_version?:"Failed to parse seafile version"} $dist $release_version
+    pack_rpm_searpc ${searpc_version?:"Failed to parse seafile version"} $dist
+    pack_rpm_seafile ${seafile_version?:"Failed to parse seafile version"} $dist
+    pack_rpm_seafile_client ${seafile_version?:"Failed to parse seafile version"} $dist
     upload_if_necessary $dist
 }
 
@@ -142,12 +141,10 @@ prepare_pack_rpm() {
 # searpc package
 pack_rpm_searpc() {
     local version=${1:?"Please specify the version"}
-    local release_version=${3:?"Please specify the release version"}
     prepare_pack_rpm ${SEARPC_PREFIX} ${SEARPC_TMP_INSTALLDIR} "libsearpc"
 
     cd $OUTPUTDIR
     fpm -s dir -n libsearpc -v $version \
-        --iteration $release_version \
         --exclude ${SEARPC_TMP_INSTALLDIR}/usr/bin \
         --description "Seafile searpc" \
         --url "https://github.com/haiwen/libsearpc" \
@@ -166,12 +163,10 @@ pack_rpm_searpc() {
 # seadrive package
 pack_rpm_seafile() {
     local version=${1:?"Please specify the version"}
-    local release_version=${3:?"Please specify the release version"}
     prepare_pack_rpm ${SEAFILE_PREFIX} ${SEAFILE_TMP_INSTALLDIR}
 
     cd $OUTPUTDIR
     fpm -s dir -n seafile-daemon -v $version \
-        --iteration $release_version \
         --description "Seafile Daemon" \
         --url "https://github.com/haiwen/seafile" \
         --category misc \
@@ -198,7 +193,6 @@ pack_rpm_seafile() {
 pack_rpm_seafile_client() {
     local version=${1:?"Please specify the version"}
     local dist=$2
-    local release_version=${3:?"Please specify the release version"}
     prepare_pack_rpm ${SEAFILECLIENT_PREFIX} ${SEAFILECLIENT_TMP_INSTALLDIR}
 
     local qtwebengine=qt5-qtwebengine
@@ -209,7 +203,6 @@ pack_rpm_seafile_client() {
 
     cd $OUTPUTDIR
     fpm -s dir -n seafile -v $version \
-        --iteration $release_version \
         --description "Seafile Client" \
         --url "https://github.com/haiwen/seafile" \
         --category misc \
@@ -281,4 +274,4 @@ upload_if_necessary() {
     do_upload $repo $dist
 }
 
-build_rpm $1 $2
+build_rpm $1
