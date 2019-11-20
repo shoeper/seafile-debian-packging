@@ -98,7 +98,7 @@ build_rpm() {
             ./autogen.sh
             ./configure --prefix=/usr
             make -j$jobs
-            make install DESTDIR=$SEAFILE_TMP_INSTALLDIR
+            make install DESTDIR=$SEARPC_TMP_INSTALLDIR
         fi
     done
 
